@@ -1,0 +1,6 @@
+{
+  "name": "Hellodog",
+  "description": "Professional pet healthcare SaaS for Pangkalpinang, feature AI diagnosis, vet locator, and adoption.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["AI Breed ID", "AI Disease ID", "Vet Locator", "Booking System"]
+}
