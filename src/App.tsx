@@ -5,6 +5,8 @@ import {
   MapPin, 
   Calendar, 
   Heart, 
+  LogIn,
+  ShieldAlert,
   Image as ImageIcon, 
   LayoutDashboard, 
   Menu, 
@@ -38,11 +40,14 @@ import {
 } from "recharts";
 
 // --- Types ---
-type View = "landing" | "dashboard" | "scanner" | "vet-map" | "booking" | "adoption" | "gallery" | "consultation";
+type View = "landing" | "dashboard" | "scanner" | "vet-map" | "booking" | "adoption" | "gallery" | "consultation" | "login" | "admin";
+
+
 
 // --- Components ---
-
+ 
 const ConsultationSim = ({ onEnd }: { onEnd: () => void }) => {
+  
   return (
     <div className="fixed inset-0 z-[100] bg-secondary flex flex-col">
       <div className="flex-1 relative overflow-hidden">
@@ -88,14 +93,15 @@ const ConsultationSim = ({ onEnd }: { onEnd: () => void }) => {
 
 const GalleryView = () => {
   const images = [
-    "https://images.unsplash.com/photo-1543466835-00a7907e9de1",
-    "https://images.unsplash.com/photo-1517849845537-4d257902454a",
-    "https://images.unsplash.com/photo-1534361960057-19889db9621e",
-    "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e",
-    "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8",
-    "https://images.unsplash.com/photo-1518717758536-85ae29035b6d",
-    "https://images.unsplash.com/photo-1552053831-71594a27632d",
-    "https://images.unsplash.com/photo-1560743641-3914f2c45636",
+    new URL('./images/anjing1.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing2.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing3.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing4.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing5.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing6.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing7.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing8.jpeg.jpeg', import.meta.url).href,
+    new URL('./images/anjing9.jpeg.jpeg', import.meta.url).href,
   ];
 
   return (
@@ -218,13 +224,27 @@ const Navbar = ({ currentView, setView }: { currentView: View, setView: (v: View
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems: { label: string; view: View; icon: any }[] = [
-    { label: "Dashboard", view: "dashboard", icon: LayoutDashboard },
-    { label: "Health AI", view: "scanner", icon: Stethoscope },
-    { label: "Vet Map", view: "vet-map", icon: MapPin },
-    { label: "Gallery", view: "gallery", icon: ImageIcon },
-    { label: "Adoption", view: "adoption", icon: Heart },
-  ];
+const role = localStorage.getItem("user_role"); // Ambil data role yang sedang login
+
+const navItems: { label: string; view: View; icon: any }[] = [
+  { label: "Dashboard", view: "dashboard", icon: LayoutDashboard },
+  { label: "Health AI", view: "scanner", icon: Stethoscope },
+  { label: "Vet Map", view: "vet-map", icon: MapPin },
+  { label: "Gallery", view: "gallery", icon: ImageIcon },
+  { label: "Adoption", view: "adoption", icon: Heart },
+  
+  
+  ...(role === "super_admin" 
+    ? [{ label: "Admin Panel", view: "admin" as View, icon: ShieldAlert }] 
+    : []
+  ),
+
+  
+  ...(!role 
+    ? [{ label: "Login", view: "login" as View, icon: LogIn }] 
+    : []
+  ),
+];
 
   return (
     <nav className={cn(
@@ -253,12 +273,35 @@ const Navbar = ({ currentView, setView }: { currentView: View, setView: (v: View
             {item.label}
           </button>
         ))}
-        <button 
-          onClick={() => setView("booking")}
-          className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-        >
-          Book Appointment
-        </button>
+        {localStorage.getItem("user_role") && (
+  <button
+    onClick={() => {
+      localStorage.removeItem("user_role");
+      alert("Kamu telah keluar dari akun.");
+      window.location.reload();
+    }}
+    className="text-sm font-medium text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 px-3 py-2 rounded-xl transition-colors"
+  >
+    Logout
+  </button>
+)}
+        <button
+        onClick={() => {
+          // 1. Atur status simulasi premium di sini bro
+          const userPremium = false; // Ganti jadi true kalau mau ngetes akun premium sukses
+
+          if (userPremium) {
+            alert("🎉 Akses Terbuka! Silakan tentukan jadwal dan jam temu konsultasi dengan dokter hewan pilihanmu, bro.");
+            setView("booking"); // Jalur asli template lu buat pindah halaman
+          } else {
+            alert("🔒 Fitur Khusus Member Premium! Ayo upgrade akun HelloDog anda ke Premium buat bisa booking jam temu dokter hewan secara instan.");
+          }
+        }}
+        className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-sm hover:bg-primary/80 transition-colors"
+      >
+        {/* Tulisan tombol otomatis berubah sesuai status */}
+        {false ? "📅 Book Appointment" : "🔒 Premium Only"}
+      </button>
       </div>
 
       <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -393,6 +436,8 @@ const Hero = ({ onStart }: { onStart: (v: View) => void }) => {
 };
 
 const Dashboard = () => {
+  const [isPremium, setIsPremium] = React.useState(false); // Ganti true kalau mau coba mode premium
+const [aiChatCount, setAiChatCount] = React.useState(0);
   const data = [
     { name: 'Mon', consultations: 12, bookings: 4 },
     { name: 'Tue', consultations: 19, bookings: 7 },
@@ -503,19 +548,41 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {VET_CLINICS.map(clinic => (
-                <tr key={clinic.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer">
-                  <td className="px-8 py-5 font-bold text-secondary">{clinic.name}</td>
-                  <td className="px-8 py-5">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      Open Now
-                    </span>
-                  </td>
-                  <td className="px-8 py-5 text-sm text-slate-600">{clinic.address}</td>
-                  <td className="px-8 py-5 text-sm font-medium">{clinic.phone}</td>
-                </tr>
-              ))}
+              {VET_CLINICS.map((clinic) => (
+  <tr key={clinic.id} className="hover:bg-slate-50/50 transition-colors cursor-pointer">
+    <td className="px-8 py-5 font-bold text-secondary">{clinic.name}</td>
+    <td className="px-8 py-5">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+        Open Now
+      </span>
+    </td>
+    <td className="px-8 py-5 text-sm text-slate-600">{clinic.address}</td>
+    <td className="px-8 py-5 text-sm font-medium">{clinic.phone}</td>
+    
+    {/* --- INI TOMBOL SPECIAL PREMIUM YANG KITA TAMBAHKAN --- */}
+    <td className="px-8 py-5 text-sm">
+      <button
+        onClick={(e) => {
+          e.stopPropagation(); // Biar gak bentrok ama fungsi klik baris tabelnya
+          if (isPremium) {
+            alert(`🎉 Berhasil! Janji temu kamu dengan ${clinic.name} sudah dijadwalkan. Dokter kami akan segera menghubungi nomor hp-mu bro!`);
+          } else {
+            alert(`🔒 Fitur Premium, bro! Yuk langganan premium dulu buat bisa booking jam temu dokter hewan pilihanmu secara instan.`);
+          }
+        }}
+        className={`px-4 py-2 rounded-xl font-bold text-xs transition-colors ${
+          isPremium 
+            ? "bg-primary text-white hover:bg-primary/80" 
+            : "bg-slate-200 text-slate-500 cursor-not-allowed"
+        }`}
+      >
+        {isPremium ? "📅 Buat Janji" : "🔒 Premium Only"}
+      </button>
+    </td>
+    {/* ---------------------------------------------------- */}
+  </tr>
+))}
             </tbody>
           </table>
         </div>
@@ -709,6 +776,7 @@ const AIScanner = () => {
 };
 
 const AdoptionPortal = () => {
+ 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -821,10 +889,18 @@ const VetMap = () => {
                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
                   <MapPin className="w-8 h-8 text-primary" />
                </div>
-               <p className="font-bold text-slate-400 uppercase tracking-widest text-xs">Map Loading — Pangkalpinang Region</p>
-               <div className="bg-white p-6 rounded-3xl shadow-xl max-w-sm border">
-                 <p className="text-sm text-slate-600 font-medium">To enable real interactive maps, add your <strong>GOOGLE_MAPS_PLATFORM_KEY</strong> in the settings.</p>
-               </div>
+            <div className="w-[72vw] xl:w-[75vw] h-[87vh] min-h-[580px] rounded-3xl overflow-hidden shadow-xl border relative z-10 -mt-20 lg:-mt-28 ml-auto mr-0 flex justify-stretch items-stretch">
+  <iframe
+    src="https://maps.google.com/maps?q=Pangkalpinang,%20Bangka%20Belitung&t=&z=13&ie=UTF8&iwloc=&output=embed"
+    width="100%"
+    height="100%"
+    style={{ border: 0 }}
+    allowFullScreen={true}
+    loading="lazy"
+    referrerPolicy="no-referrer-when-downgrade"
+    className="w-full h-full"
+  ></iframe>
+</div>
             </div>
          </div>
       </div>
@@ -923,7 +999,7 @@ export default function App() {
                initial={{ opacity: 0, y: 20 }} 
                animate={{ opacity: 1, y: 0 }} 
                exit={{ opacity: 0, y: 20 }}
-               className="pt-24 min-h-screen bg-slate-50/50"
+               className="pt-24 min-h-screen bg-slate-950 text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/40 via-slate-950 to-slate-950"
             >
                {view === "dashboard" && <Dashboard />}
                {view === "scanner" && <AIScanner />}
@@ -931,6 +1007,115 @@ export default function App() {
                {view === "adoption" && <AdoptionPortal />}
                {view === "gallery" && <GalleryView />}
                {view === "booking" && <BookingSystem />}
+               {/* --- HALAMAN LOGIN ELEGAN --- */}
+          {view === "login" && (
+            <div className="min-h-[70vh] flex items-center justify-center p-4">
+              <div className="bg-slate-900/60 backdrop-blur-xl p-8 rounded-3xl border border-white/10 w-full max-w-md shadow-2xl relative">
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div className="mb-8 text-center">
+                  <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">HelloDog Account</h2>
+                </div>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.target as any;
+                  if (target[0].value === 'admin@hellodog.com') {
+                    localStorage.setItem("user_role", "super_admin"); 
+                    alert("Selamat Datang, Admin!");
+                  } else {
+                    localStorage.setItem("user_role", "adopter"); 
+                    alert("Login Berhasil!");
+                  }
+                  window.location.reload();
+                }} className="space-y-5">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-400 block mb-1.5 uppercase tracking-wider">Email Address</label>
+                    <input type="email" placeholder="contoh@email.com" className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all text-sm" required />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-400 block mb-1.5 uppercase tracking-wider">Password</label>
+                    <input type="password" placeholder="••••••••" className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all text-sm" required />
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white p-3.5 rounded-xl font-bold mt-4 transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98]">
+                    Sign In
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* --- HALAMAN ADMIN DASHBOARD (FINAL DESIGN + PROTECTED) --- */}
+          {view === "admin" && (
+            
+            localStorage.getItem("user_role") !== "super_admin" ? (
+              <div className="flex flex-col items-center justify-center p-12 text-center min-h-[60vh]">
+                <div className="p-4 bg-red-500/10 rounded-full text-red-500 mb-4 animate-bounce">
+                  <ShieldAlert size={48} />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">Akses Ditolak!</h2>
+                <p className="text-slate-500 max-w-sm mb-6">Halaman ini dilindungi secara ketat. Anda tidak memiliki izin sebagai Super Admin untuk melihat data ini.</p>
+                <button onClick={() => setView("dashboard")} className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2 rounded-xl text-sm font-medium transition-all">
+                  Kembali ke Dashboard
+                </button>
+              </div>
+            ) : (
+              
+              <div className="p-8 max-w-6xl mx-auto text-slate-800">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-6 mb-8 gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-red-500 text-white rounded-2xl shadow-md shadow-red-500/20">
+                      <ShieldAlert size={24} />
+                    </div>
+                    <div>
+                      <h1 className="text-3xl font-bold tracking-tight text-slate-900">Admin Control Center</h1>
+                      <p className="text-slate-500 text-sm mt-0.5">Manajemen database terpusat untuk aplikasi HelloDog</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => {
+                      localStorage.removeItem("user_role"); // Fungsi Logout Admin
+                      alert("Logged out successfully");
+                      window.location.reload();
+                    }} className="bg-rose-50 hover:bg-rose-100 text-rose-600 px-4 py-2 rounded-xl text-sm font-semibold transition-colors border border-rose-100">
+                      Logout Admin
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Database Anjing</span>
+                    <p className="text-4xl font-extrabold text-slate-950 mt-1">12 <span className="text-sm font-medium text-slate-400">Ekor</span></p>
+                    <div className="mt-3 text-xs text-emerald-600 font-medium">● Terhubung ke phpMyAdmin</div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Antrean Adopsi</span>
+                    <p className="text-4xl font-extrabold text-amber-500 mt-1">3 <span className="text-sm font-medium text-slate-400">Pemohon</span></p>
+                    <div className="mt-3 text-xs text-slate-500">Butuh persetujuan admin</div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status Server</span>
+                    <p className="text-4xl font-extrabold text-emerald-500 mt-1">Active</p>
+                    <div className="mt-3 text-xs text-slate-500">Laragon MySQL Engine Online</div>
+                  </div>
+                </div>
+
+                {/* Database Table Simulator */}
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                  <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800">Daftar Adopsi Masuk</h3>
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">+ Tambah Data Anjing</button>
+                  </div>
+                  <div className="p-6 text-center text-slate-400 text-sm">
+                    [Tabel Data MySQL dari Laragon akan muncul di sini secara dinamis setelah API terhubung]
+                  </div>
+                </div>
+              </div>
+            )
+          )}
             </motion.div>
           )}
 
